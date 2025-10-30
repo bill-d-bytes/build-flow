@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { login, register, isLoading, error, clearError } = useAuth();
@@ -15,28 +21,51 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   // Login form state
   const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
 
-  // Register form state
-  const [registerData, setRegisterData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    role: 'contractor' as 'contractor' | 'engineer' | 'supplier' | 'project_manager',
-    companyName: '',
-    gstNumber: '',
-    panNumber: '',
+  // Register form types
+  type Address = {
+    street: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+
+  type RegisterData = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    phone: string;
+    role: "contractor" | "engineer" | "supplier" | "project_manager";
+    companyName: string;
+    gstNumber: string;
+    panNumber: string;
+    address: Address;
+  };
+
+  // Register form state (typed)
+  const [registerData, setRegisterData] = useState<RegisterData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    role: "contractor",
+    companyName: "",
+    gstNumber: "",
+    panNumber: "",
     address: {
-      street: '',
-      city: '',
-      state: '',
-      pincode: '',
-      country: 'India',
+      street: "",
+      city: "",
+      state: "",
+      pincode: "",
+      country: "India",
     },
   });
 
@@ -70,40 +99,62 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setRegisterData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value,
-        },
-      }));
+    // handle nested fields like "address.street"
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+
+      // Narrow to the known nested object 'address' for type-safety
+      if (parent === "address") {
+        setRegisterData((prev) => ({
+          ...prev,
+          address: {
+            ...prev.address,
+            [child as keyof Address]: value,
+          },
+        }));
+        return;
+      }
+
+      // Fallback for any other nested object: use a safe any-cast
+      setRegisterData(
+        (prev) =>
+          ({
+            ...prev,
+            [parent]: {
+              ...(prev as any)[parent],
+              [child]: value,
+            },
+          } as unknown as RegisterData)
+      );
     } else {
-      setRegisterData(prev => ({
+      setRegisterData((prev) => ({
         ...prev,
-        [field]: value,
+        // cast because `field` is dynamic; known keys will be accepted
+        [field as keyof RegisterData]: value as any,
       }));
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md sm:max-w-lg lg:max-w-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to BuildFlow</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Welcome to Builder Stop
+          </CardTitle>
           <CardDescription>
             Sign in to your account or create a new one
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <Alert className="mb-4" variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <div className="max-h-[70vh] sm:max-h-[60vh] overflow-y-auto pr-2">
+            {error && (
+              <Alert className="mb-4" variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <Tabs defaultValue="login" className="w-full">
+            <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
@@ -118,7 +169,12 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     type="email"
                     placeholder="Enter your email"
                     value={loginData.email}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) =>
+                      setLoginData((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
                     required
                   />
                 </div>
@@ -128,10 +184,15 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <div className="relative">
                     <Input
                       id="login-password"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={loginData.password}
-                      onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                      onChange={(e) =>
+                        setLoginData((prev) => ({
+                          ...prev,
+                          password: e.target.value,
+                        }))
+                      }
                       required
                     />
                     <Button
@@ -141,7 +202,11 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -153,7 +218,7 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       Signing in...
                     </>
                   ) : (
-                    'Sign In'
+                    "Sign In"
                   )}
                 </Button>
               </form>
@@ -161,14 +226,16 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
             <TabsContent value="register" className="space-y-4">
               <form onSubmit={handleRegister} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
                       placeholder="First name"
                       value={registerData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("firstName", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -178,7 +245,9 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       id="lastName"
                       placeholder="Last name"
                       value={registerData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("lastName", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -191,7 +260,7 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     type="email"
                     placeholder="Enter your email"
                     value={registerData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     required
                   />
                 </div>
@@ -203,7 +272,7 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     type="tel"
                     placeholder="Enter your phone number"
                     value={registerData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
                     required
                   />
                 </div>
@@ -214,7 +283,7 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     id="role"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={registerData.role}
-                    onChange={(e) => handleInputChange('role', e.target.value)}
+                    onChange={(e) => handleInputChange("role", e.target.value)}
                     required
                   >
                     <option value="contractor">Contractor</option>
@@ -230,18 +299,22 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     id="companyName"
                     placeholder="Enter company name"
                     value={registerData.companyName}
-                    onChange={(e) => handleInputChange('companyName', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("companyName", e.target.value)
+                    }
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="gstNumber">GST Number (Optional)</Label>
                     <Input
                       id="gstNumber"
                       placeholder="GST number"
                       value={registerData.gstNumber}
-                      onChange={(e) => handleInputChange('gstNumber', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("gstNumber", e.target.value)
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -250,7 +323,9 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       id="panNumber"
                       placeholder="PAN number"
                       value={registerData.panNumber}
-                      onChange={(e) => handleInputChange('panNumber', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("panNumber", e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -261,19 +336,23 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     id="address.street"
                     placeholder="Enter street address"
                     value={registerData.address.street}
-                    onChange={(e) => handleInputChange('address.street', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("address.street", e.target.value)
+                    }
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="address.city">City</Label>
                     <Input
                       id="address.city"
                       placeholder="City"
                       value={registerData.address.city}
-                      onChange={(e) => handleInputChange('address.city', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("address.city", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -283,7 +362,9 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       id="address.state"
                       placeholder="State"
                       value={registerData.address.state}
-                      onChange={(e) => handleInputChange('address.state', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("address.state", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -295,7 +376,9 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     id="address.pincode"
                     placeholder="Pincode"
                     value={registerData.address.pincode}
-                    onChange={(e) => handleInputChange('address.pincode', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("address.pincode", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -305,10 +388,12 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <div className="relative">
                     <Input
                       id="password"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       placeholder="Create a password"
                       value={registerData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
                       required
                     />
                     <Button
@@ -318,7 +403,11 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -328,10 +417,12 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <div className="relative">
                     <Input
                       id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       value={registerData.confirmPassword}
-                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("confirmPassword", e.target.value)
+                      }
                       required
                     />
                     <Button
@@ -339,9 +430,15 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       variant="ghost"
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                     >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -353,12 +450,13 @@ export const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       Creating account...
                     </>
                   ) : (
-                    'Create Account'
+                    "Create Account"
                   )}
                 </Button>
               </form>
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
 
           <div className="mt-4 text-center">
             <Button variant="ghost" onClick={onClose}>

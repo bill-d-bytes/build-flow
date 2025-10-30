@@ -27,22 +27,34 @@ export const Header = () => {
                 <Building2 className="w-5 h-5 text-white" />
               </div>
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                BuildFlow
+                Builder Stop
               </span>
             </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link
+              to="/"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
               Home
             </Link>
-            <Link to="/materials" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link
+              to="/materials"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
               Materials
             </Link>
-            <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">
+            <a
+              href="#features"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
               Features
             </a>
-            <a href="#about" className="text-sm font-medium hover:text-primary transition-colors">
+            <a
+              href="#about"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
               About
             </a>
           </nav>
@@ -58,11 +70,15 @@ export const Header = () => {
                     </span>
                   </Button>
                 </Link>
-                
+
                 <div className="flex items-center gap-2">
                   <div className="text-sm">
-                    <div className="font-medium">{user?.firstName} {user?.lastName}</div>
-                    <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
+                    <div className="font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </div>
+                    <div className="text-xs text-muted-foreground capitalize">
+                      {user?.role}
+                    </div>
                   </div>
                   <Button variant="ghost" size="icon" onClick={handleLogout}>
                     <LogOut className="w-4 h-4" />
@@ -74,12 +90,15 @@ export const Header = () => {
                 <Button variant="ghost" onClick={handleAuthClick}>
                   Sign In
                 </Button>
-                <Button onClick={handleAuthClick} className="bg-primary hover:bg-primary-glow text-primary-foreground">
+                <Button
+                  onClick={handleAuthClick}
+                  className="bg-primary hover:bg-primary-glow text-primary-foreground"
+                >
                   Get Started
                 </Button>
               </>
             )}
-            
+
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="w-5 h-5" />
             </Button>
@@ -87,9 +106,7 @@ export const Header = () => {
         </div>
       </header>
 
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </>
   );
 };
